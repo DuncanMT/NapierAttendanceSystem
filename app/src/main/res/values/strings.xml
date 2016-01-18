@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Napier Attendance System</string>
+    <string name="loginmsg">Please scan your Edinburgh Napier ID card to sign in</string>
+    <string name="nfc_not_enabled">Please enable NFC to continue</string>
+    <string name="nfc_not_available">This app requires NFC to work</string>
 </resources>
