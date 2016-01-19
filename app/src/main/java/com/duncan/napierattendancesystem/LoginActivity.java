@@ -7,11 +7,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.JsonArrayRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class LoginActivity extends NfcActivity {
 
@@ -43,12 +46,8 @@ public class LoginActivity extends NfcActivity {
             String CardID = readID(idInBinary);
             Log.v("login", CardID);
             String url = urlString+CardID;
-            makeStringRequest(url);
-            if(Response!=null){
-
-            }
+            makeJsonArrayRequest(url);
         }
-
     }
 
     private String readID(byte [] inarray) {
@@ -66,16 +65,32 @@ public class LoginActivity extends NfcActivity {
         return out;
     }
 
-    private void makeStringRequest(String url){
+    private void makeJsonArrayRequest(String url) {
 
         showpDialog();
 
-        StringRequest req = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
+        JsonArrayRequest req = new JsonArrayRequest(url,
+                new Response.Listener<JSONArray>() {
                     @Override
-                    public void onResponse(String response) {
-                        Log.d(TAG, response);
-                        Response = response;
+                    public void onResponse(JSONArray response) {
+                        Log.d(TAG, response.toString());
+                        try {
+                                JSONObject event = (JSONObject) response
+                                        .get(0);
+                                String name = event.getString("staff");
+                                name=name.replaceAll("\\s","");
+                                Log.d(TAG, "Response username = "+name);
+                                LoginState.setUserName(LoginActivity.this, name);
+                                Intent eventIntent = new Intent(LoginActivity.this, EventActivity.class);
+                                LoginActivity.this.startActivity(eventIntent);
+                                LoginActivity.this.finish();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Toast.makeText(getApplicationContext(),
+                                    "Error: " + e.getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+
                         hidepDialog();
                     }
                 }, new Response.ErrorListener() {
@@ -87,6 +102,8 @@ public class LoginActivity extends NfcActivity {
                 hidepDialog();
             }
         });
+
+        // Adding request to request queue
         AppController.getInstance().addToRequestQueue(req);
     }
 
