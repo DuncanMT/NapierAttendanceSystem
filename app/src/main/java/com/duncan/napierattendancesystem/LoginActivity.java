@@ -1,28 +1,33 @@
 package com.duncan.napierattendancesystem;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.android.volley.RequestQueue;
+import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.StringRequest;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+public class LoginActivity extends NfcActivity {
 
-public class LoginActivity extends AppCompatActivity {
+    private static String TAG = LoginActivity.class.getSimpleName();
+    private String Response;
+    private String urlString = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?login=";
 
-    private RequestQueue mVolleyQueue;
+    private ProgressDialog pDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        pDialog = new ProgressDialog(this);
+        pDialog.setMessage("Please wait...");
+        pDialog.setCancelable(false);
         handleIntent(getIntent());
     }
 
@@ -37,40 +42,11 @@ public class LoginActivity extends AppCompatActivity {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String CardID = readID(idInBinary);
             Log.v("login", CardID);
-            String url = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?card="+CardID;
+            String url = urlString+CardID;
+            makeStringRequest(url);
+            if(Response!=null){
 
-            // Request a string response from the provided URL.
-            JsonArrayRequest jsonArrayRequest = new JsonArrayRequest( url,
-                    new Response.Listener<JSONArray>() {
-                        @Override
-                        public void onResponse(JSONArray response) {
-                            Log.v("onResponselogin", response.toString());
-                            try {
-                                JSONObject jb = (JSONObject) response.get(0);
-                                String present = jb.getString("PRESENT");
-                                String name = jb.getString("SPR_FNM1");
-                                Log.v("onResponselogin", present);
-                                Log.v("onResponselogin", name);
-                                if(present.equals("1")){
-                                    LoginState.setUserName(LoginActivity.this, name );
-                                    Intent mainIntent = new Intent(LoginActivity.this, MainActivity.class);
-                                    LoginActivity.this.startActivity(mainIntent);
-                                    LoginActivity.this.finish();
-                                }else{
-                                    Toast.makeText(LoginActivity.this, "Not Present", Toast.LENGTH_SHORT).show();
-                                }
-                            }catch(JSONException e){
-                                e.printStackTrace();
-                            }
-                        }
-
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.v("Volley Error", error.toString());
-                }
-            });
-            mVolleyQueue.add(jsonArrayRequest);
+            }
         }
 
     }
@@ -88,5 +64,39 @@ public class LoginActivity extends AppCompatActivity {
             out += hex[i];
         }
         return out;
+    }
+
+    private void makeStringRequest(String url){
+
+        showpDialog();
+
+        StringRequest req = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.d(TAG, response);
+                        Response = response;
+                        hidepDialog();
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                VolleyLog.d(TAG, "Error: " + error.getMessage());
+                Toast.makeText(getApplicationContext(),
+                        error.getMessage(), Toast.LENGTH_SHORT).show();
+                hidepDialog();
+            }
+        });
+        AppController.getInstance().addToRequestQueue(req);
+    }
+
+    private void showpDialog() {
+        if (!pDialog.isShowing())
+            pDialog.show();
+    }
+
+    private void hidepDialog() {
+        if (pDialog.isShowing())
+            pDialog.dismiss();
     }
 }
