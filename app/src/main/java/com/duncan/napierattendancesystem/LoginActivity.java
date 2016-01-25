@@ -75,15 +75,21 @@ public class LoginActivity extends NfcActivity {
                     public void onResponse(JSONArray response) {
                         Log.d(TAG, response.toString());
                         try {
+                            if(response.length()==0) {
+                                Toast.makeText(getApplicationContext(),
+                                        "Error: User not found",
+                                        Toast.LENGTH_LONG).show();
+                            }else{
                                 JSONObject event = (JSONObject) response
                                         .get(0);
                                 String name = event.getString("staff");
-                                name=name.replaceAll("\\s","");
-                                Log.d(TAG, "Response username = "+name);
+                                name = name.replaceAll("\\s", "");
+                                Log.d(TAG, "Response username = " + name);
                                 LoginState.setUserName(LoginActivity.this, name);
                                 Intent eventIntent = new Intent(LoginActivity.this, EventActivity.class);
                                 LoginActivity.this.startActivity(eventIntent);
                                 LoginActivity.this.finish();
+                            }
                         } catch (JSONException e) {
                             e.printStackTrace();
                             Toast.makeText(getApplicationContext(),
