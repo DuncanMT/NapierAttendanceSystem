@@ -4,4 +4,5 @@
     <string name="nfc_not_enabled">Please enable NFC to continue</string>
     <string name="nfc_not_available">This app requires NFC to work</string>
     <string name="logout">Logout</string>
+    <string name="timetable">Timetable</string>
 </resources>

@@ -175,6 +175,11 @@ public class EventActivity extends AppCompatActivity {
             EventActivity.this.finish();
             return true;
         }
+        if (id == R.id.action_timetable) {
+            Intent eventIntent = new Intent(EventActivity.this, TimetableActivity.class);
+            EventActivity.this.startActivity(eventIntent);
+            return true;
+        }
 
         return super.onOptionsItemSelected(item);
     }
