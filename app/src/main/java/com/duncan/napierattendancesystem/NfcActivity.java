@@ -10,12 +10,14 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
 public class NfcActivity extends AppCompatActivity {
+
     private NfcAdapter mNfcAdapter;
+    private boolean  NfcState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        NfcState= true;
         mNfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
     }
@@ -23,14 +25,14 @@ public class NfcActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        setupForegroundDispatch(this, mNfcAdapter);
+        if(isNfcState())
+            setupForegroundDispatch(this, mNfcAdapter);
     }
 
     @Override
     protected void onPause() {
-        stopForegroundDispatch(this, mNfcAdapter);
-
         super.onPause();
+        stopForegroundDispatch(this, mNfcAdapter);
     }
 
     public static void setupForegroundDispatch(final Activity activity, NfcAdapter adapter) {
@@ -52,5 +54,14 @@ public class NfcActivity extends AppCompatActivity {
 
     public static void stopForegroundDispatch(final Activity activity, NfcAdapter adapter) {
         adapter.disableForegroundDispatch(activity);
+    }
+
+
+    public boolean isNfcState() {
+        return NfcState;
+    }
+
+    public void setNfcState(boolean nfcState) {
+        NfcState = nfcState;
     }
 }

@@ -29,7 +29,8 @@
                 android:resource="@xml/nfc_tech_filter" />
         </activity>
         <activity android:name=".NfcActivity" />
-        <activity android:name=".TimetableActivity"></activity>
+        <activity android:name=".TimetableActivity" />
+        <activity android:name=".AttendanceActivity"></activity>
     </application>
 
 </manifest>

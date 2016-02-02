@@ -22,15 +22,10 @@ public class LoginActivity extends NfcActivity {
     private String Response;
     private String urlString = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?login=";
 
-    private ProgressDialog pDialog;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        pDialog = new ProgressDialog(this);
-        pDialog.setMessage("Please wait...");
-        pDialog.setCancelable(false);
         handleIntent(getIntent());
     }
 
@@ -66,9 +61,6 @@ public class LoginActivity extends NfcActivity {
     }
 
     private void makeJsonArrayRequest(String url) {
-
-        showpDialog();
-
         JsonArrayRequest req = new JsonArrayRequest(url,
                 new Response.Listener<JSONArray>() {
                     @Override
@@ -82,8 +74,7 @@ public class LoginActivity extends NfcActivity {
                             }else{
                                 JSONObject event = (JSONObject) response
                                         .get(0);
-                                String name = event.getString("staff");
-                                name = name.replaceAll("\\s", "");
+                                String name = event.getString("spname");
                                 Log.d(TAG, "Response username = " + name);
                                 LoginState.setUserName(LoginActivity.this, name);
                                 Intent eventIntent = new Intent(LoginActivity.this, EventActivity.class);
@@ -96,8 +87,6 @@ public class LoginActivity extends NfcActivity {
                                     "Error: " + e.getMessage(),
                                     Toast.LENGTH_LONG).show();
                         }
-
-                        hidepDialog();
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -105,21 +94,10 @@ public class LoginActivity extends NfcActivity {
                 VolleyLog.d(TAG, "Error: " + error.getMessage());
                 Toast.makeText(getApplicationContext(),
                         error.getMessage(), Toast.LENGTH_SHORT).show();
-                hidepDialog();
             }
         });
 
         // Adding request to request queue
         AppController.getInstance().addToRequestQueue(req);
-    }
-
-    private void showpDialog() {
-        if (!pDialog.isShowing())
-            pDialog.show();
-    }
-
-    private void hidepDialog() {
-        if (pDialog.isShowing())
-            pDialog.dismiss();
     }
 }

@@ -12,6 +12,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Response;
@@ -23,6 +24,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 
 public class EventActivity extends AppCompatActivity {
@@ -30,10 +33,11 @@ public class EventActivity extends AppCompatActivity {
     private static String TAG = EventActivity.class.getSimpleName();
     private Spinner classesView;
     private ArrayList<String> classes = new ArrayList<>();
+
     private ListView studentListView;
     private ArrayList<String> listItems=new ArrayList<>();
     private ArrayAdapter<String> listAdapter;
-    private ProgressDialog pDialog;
+
     private final String urlClasses = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?classes=";
     private final String urlAttends = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?attends=";
 
@@ -50,13 +54,11 @@ public class EventActivity extends AppCompatActivity {
             EventActivity.this.finish();
         }
 
-        pDialog = new ProgressDialog(this);
-        pDialog.setMessage("Please wait...");
-        pDialog.setCancelable(false);
         classesView = (Spinner) findViewById(R.id.module);
         studentListView = (ListView) findViewById(R.id.listView);
 
         String Finishedurl=urlClasses + LoginState.getUserName(EventActivity.this);
+        Finishedurl = Finishedurl.replaceAll(" ","%20");
         Log.d(TAG, Finishedurl);
 
         makeClassesRequest(Finishedurl);
@@ -65,6 +67,16 @@ public class EventActivity extends AppCompatActivity {
                 android.R.layout.simple_list_item_1,
                 listItems);
         studentListView.setAdapter(listAdapter);
+        studentListView.setOnItemClickListener(new AdapterView.OnItemClickListener()
+        {
+            public void onItemClick(AdapterView<?> arg0, View arg1,int arg2, long arg3)
+            {
+                String str = ((TextView) arg1).getText().toString();
+                Intent intent = new Intent(getBaseContext(),AttendanceActivity.class);
+                intent.putExtra("StudentGroup", str);
+                startActivity(intent);
+            }
+        });
 
         classesView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -81,7 +93,6 @@ public class EventActivity extends AppCompatActivity {
     }
 
     private void makeClassesRequest(String url) {
-        showpDialog();
         JsonArrayRequest req = new JsonArrayRequest(url,
                 new Response.Listener<JSONArray>() {
                     @Override
@@ -105,7 +116,7 @@ public class EventActivity extends AppCompatActivity {
                                     "Error: " + e.getMessage(),
                                     Toast.LENGTH_LONG).show();
                         }
-                        hidepDialog();
+
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -113,15 +124,12 @@ public class EventActivity extends AppCompatActivity {
                 VolleyLog.d(TAG, "Error: " + error.getMessage());
                 Toast.makeText(getApplicationContext(),
                         error.getMessage(), Toast.LENGTH_SHORT).show();
-                hidepDialog();
             }
         });
-        // Adding request to request queue
         AppController.getInstance().addToRequestQueue(req);
     }
 
     private void makeAttendsRequest(String url) {
-        showpDialog();
         JsonArrayRequest req = new JsonArrayRequest(url,
                 new Response.Listener<JSONArray>() {
                     @Override
@@ -143,7 +151,7 @@ public class EventActivity extends AppCompatActivity {
                                     "Error: " + e.getMessage(),
                                     Toast.LENGTH_LONG).show();
                         }
-                        hidepDialog();
+
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -151,7 +159,6 @@ public class EventActivity extends AppCompatActivity {
                 VolleyLog.d(TAG, "Error: " + error.getMessage());
                 Toast.makeText(getApplicationContext(),
                         error.getMessage(), Toast.LENGTH_SHORT).show();
-                hidepDialog();
             }
         });
         AppController.getInstance().addToRequestQueue(req);
@@ -182,15 +189,5 @@ public class EventActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    private void showpDialog() {
-        if (!pDialog.isShowing())
-            pDialog.show();
-    }
-
-    private void hidepDialog() {
-        if (pDialog.isShowing())
-            pDialog.dismiss();
     }
 }
