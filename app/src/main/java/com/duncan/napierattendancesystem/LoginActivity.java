@@ -74,7 +74,7 @@ public class LoginActivity extends NfcActivity {
                             }else{
                                 JSONObject event = (JSONObject) response
                                         .get(0);
-                                String name = event.getString("spname");
+                                String name = event.getString("id");
                                 Log.d(TAG, "Response username = " + name);
                                 LoginState.setUserName(LoginActivity.this, name);
                                 Intent eventIntent = new Intent(LoginActivity.this, EventActivity.class);
