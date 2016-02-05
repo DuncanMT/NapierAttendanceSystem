@@ -1,9 +1,8 @@
 package com.duncan.napierattendancesystem;
 
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,14 +23,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 
 public class EventActivity extends AppCompatActivity {
 
     private static String TAG = EventActivity.class.getSimpleName();
-    private Spinner classesView;
+    private Spinner classesSpinner;
     private ArrayList<String> classes = new ArrayList<>();
 
     private ListView studentListView;
@@ -54,7 +51,7 @@ public class EventActivity extends AppCompatActivity {
             EventActivity.this.finish();
         }
 
-        classesView = (Spinner) findViewById(R.id.module);
+        classesSpinner = (Spinner) findViewById(R.id.module);
         studentListView = (ListView) findViewById(R.id.listView);
 
         String Finishedurl=urlClasses + LoginState.getUserName(EventActivity.this);
@@ -67,23 +64,15 @@ public class EventActivity extends AppCompatActivity {
                 android.R.layout.simple_list_item_1,
                 listItems);
         studentListView.setAdapter(listAdapter);
-        studentListView.setOnItemClickListener(new AdapterView.OnItemClickListener()
-        {
-            public void onItemClick(AdapterView<?> arg0, View arg1,int arg2, long arg3)
-            {
-                String str = ((TextView) arg1).getText().toString();
-                Intent intent = new Intent(getBaseContext(),AttendanceActivity.class);
-                intent.putExtra("StudentGroup", str);
-                startActivity(intent);
-            }
-        });
 
-        classesView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        classesSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String module = parent.getItemAtPosition(position).toString();
                 Log.d(TAG,"module = "+module);
-                makeAttendsRequest(urlAttends+module);
+                String Finished = urlAttends+module;
+                Log.d(TAG,"Attends Request = "+Finished);
+                makeAttendsRequest(Finished);
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
@@ -108,7 +97,7 @@ public class EventActivity extends AppCompatActivity {
                             }
                             ArrayAdapter adapter = new ArrayAdapter<>(EventActivity.this, android.R.layout.simple_spinner_item, classes);
                             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                            classesView.setAdapter(adapter);
+                            classesSpinner.setAdapter(adapter);
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -135,14 +124,14 @@ public class EventActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONArray response) {
                         listAdapter.clear();
-                        Log.d(TAG, "Attends request: " + response.toString());
+                        Log.d(TAG, "Attends response: " + response.toString());
                         try {
                             for (int i = 0; i < response.length(); i++) {
 
                                 JSONObject event = (JSONObject) response
                                         .get(i);
 
-                                String name = event.getString("student");
+                                String name = event.getString("SPR_CODE");
                                 listAdapter.add(name);
                             }
                         } catch (JSONException e) {

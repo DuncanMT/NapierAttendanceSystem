@@ -74,7 +74,7 @@ public class LoginActivity extends NfcActivity {
                             }else{
                                 JSONObject event = (JSONObject) response
                                         .get(0);
-                                String name = event.getString("id");
+                                String name = event.getString("spname");
                                 Log.d(TAG, "Response username = " + name);
                                 LoginState.setUserName(LoginActivity.this, name);
                                 Intent eventIntent = new Intent(LoginActivity.this, EventActivity.class);
@@ -96,8 +96,6 @@ public class LoginActivity extends NfcActivity {
                         error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-
-        // Adding request to request queue
         AppController.getInstance().addToRequestQueue(req);
     }
 }
