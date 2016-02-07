@@ -5,4 +5,6 @@
     <string name="nfc_not_available">This app requires NFC to work</string>
     <string name="logout">Logout</string>
     <string name="timetable">Timetable</string>
+    <string name="nextweek">Next Week</string>
+    <string name="prevweek">Previous Week</string>
 </resources>

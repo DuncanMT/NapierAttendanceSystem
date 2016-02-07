@@ -2,6 +2,7 @@ package com.duncan.napierattendancesystem;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,7 +21,7 @@ public class LoginActivity extends NfcActivity {
 
     private static String TAG = LoginActivity.class.getSimpleName();
     private String Response;
-    private String urlString = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?login=";
+    private String baseurl = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?login=";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +41,11 @@ public class LoginActivity extends NfcActivity {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String CardID = readID(idInBinary);
             Log.v("login", CardID);
-            String url = urlString+CardID;
-            makeJsonArrayRequest(url);
+            Uri.Builder url = Uri.parse(baseurl).buildUpon();
+            url.path("CardID.php");
+            url.appendQueryParameter("login", CardID);
+            String finishedurl = url.toString();
+            makeJsonArrayRequest(finishedurl);
         }
     }
 

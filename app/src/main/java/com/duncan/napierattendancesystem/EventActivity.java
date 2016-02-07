@@ -1,6 +1,7 @@
 package com.duncan.napierattendancesystem;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -9,6 +10,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -28,6 +30,11 @@ import java.util.ArrayList;
 public class EventActivity extends AppCompatActivity {
 
     private static String TAG = EventActivity.class.getSimpleName();
+
+    private String username;
+
+    private Button prevButton, nextButton;
+
     private Spinner classesSpinner;
     private ArrayList<String> classes = new ArrayList<>();
 
@@ -35,16 +42,16 @@ public class EventActivity extends AppCompatActivity {
     private ArrayList<String> listItems=new ArrayList<>();
     private ArrayAdapter<String> listAdapter;
 
-    private final String urlClasses = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?classes=";
-    private final String urlAttends = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?attends=";
+    private final String baseurl = "http://napierattendance-duncanmt.rhcloud.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event);
 
-        Log.d(TAG, "Login State username: " + LoginState.getUserName(EventActivity.this));
-        if(LoginState.getUserName(EventActivity.this).length() == 0)
+        username = LoginState.getUserName(EventActivity.this);
+        Log.d(TAG, "Login State username: " + username);
+        if(username.length() == 0)
         {
             Intent mainIntent = new Intent(EventActivity.this, LoginActivity.class);
             EventActivity.this.startActivity(mainIntent);
@@ -53,12 +60,18 @@ public class EventActivity extends AppCompatActivity {
 
         classesSpinner = (Spinner) findViewById(R.id.module);
         studentListView = (ListView) findViewById(R.id.listView);
+        prevButton = (Button) findViewById(R.id.prevButton);
+        nextButton = (Button) findViewById(R.id.nextButton);
 
-        String Finishedurl=urlClasses + LoginState.getUserName(EventActivity.this);
-        Finishedurl = Finishedurl.replaceAll(" ","%20");
-        Log.d(TAG, Finishedurl);
+        Uri.Builder url = Uri.parse(baseurl).buildUpon();
+        url.path("CardID.php");
+        url.appendQueryParameter("name", username);
+        url.appendQueryParameter("week", "2");
 
-        makeClassesRequest(Finishedurl);
+        String finishedurl = url.toString();
+        Log.d(TAG, finishedurl);
+
+        makeClassesRequest(finishedurl);
 
         listAdapter=new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
@@ -69,10 +82,13 @@ public class EventActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String module = parent.getItemAtPosition(position).toString();
-                Log.d(TAG,"module = "+module);
-                String Finished = urlAttends+module;
-                Log.d(TAG,"Attends Request = "+Finished);
-                makeAttendsRequest(Finished);
+                Log.d(TAG, "Module = "+module);
+                Uri.Builder url = Uri.parse(baseurl).buildUpon();
+                url.path("CardID.php");
+                url.appendQueryParameter("attends", module);
+                String finishedurl = url.toString();
+                Log.d(TAG,"Attends Request = "+finishedurl);
+                makeAttendsRequest(finishedurl);
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
@@ -86,13 +102,12 @@ public class EventActivity extends AppCompatActivity {
                 new Response.Listener<JSONArray>() {
                     @Override
                     public void onResponse(JSONArray response) {
-                        Log.d(TAG, response.toString());
                         try {
                             for (int i = 0; i < response.length(); i++) {
                                 JSONObject event = (JSONObject) response
                                         .get(i);
 
-                                String name = event.getString("event");
+                                String name = event.getString("id");
                                 classes.add(name);
                             }
                             ArrayAdapter adapter = new ArrayAdapter<>(EventActivity.this, android.R.layout.simple_spinner_item, classes);
@@ -124,7 +139,6 @@ public class EventActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONArray response) {
                         listAdapter.clear();
-                        Log.d(TAG, "Attends response: " + response.toString());
                         try {
                             for (int i = 0; i < response.length(); i++) {
 
