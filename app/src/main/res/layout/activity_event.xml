@@ -9,9 +9,17 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.duncan.napierattendancesystem.EventActivity">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:id="@+id/week"
+        android:layout_centerHorizontal="true" />
+
     <Spinner
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/week"
         android:id="@+id/module"
         android:layout_alignParentStart="true" />
 

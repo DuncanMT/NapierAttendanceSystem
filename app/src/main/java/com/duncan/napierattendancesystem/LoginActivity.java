@@ -39,13 +39,9 @@ public class LoginActivity extends NfcActivity {
         String action = intent.getAction();
         if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
-            String CardID = readID(idInBinary);
-            Log.v("login", CardID);
-            Uri.Builder url = Uri.parse(baseurl).buildUpon();
-            url.path("CardID.php");
-            url.appendQueryParameter("login", CardID);
-            String finishedurl = url.toString();
-            makeJsonArrayRequest(finishedurl);
+            String cardID = readID(idInBinary);
+            Log.v("login", cardID);
+            makeLoginRequest(cardID);
         }
     }
 
@@ -64,8 +60,13 @@ public class LoginActivity extends NfcActivity {
         return out;
     }
 
-    private void makeJsonArrayRequest(String url) {
-        JsonArrayRequest req = new JsonArrayRequest(url,
+    private void makeLoginRequest(String cardID) {
+        Uri.Builder url = Uri.parse(baseurl).buildUpon();
+        url.path("CardID.php");
+        url.appendQueryParameter("login", cardID);
+        String finishedurl = url.toString();
+
+        JsonArrayRequest req = new JsonArrayRequest(finishedurl,
                 new Response.Listener<JSONArray>() {
                     @Override
                     public void onResponse(JSONArray response) {
@@ -97,7 +98,7 @@ public class LoginActivity extends NfcActivity {
             public void onErrorResponse(VolleyError error) {
                 VolleyLog.d(TAG, "Error: " + error.getMessage());
                 Toast.makeText(getApplicationContext(),
-                        error.getMessage(), Toast.LENGTH_SHORT).show();
+                        "Volley error "+error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
         AppController.getInstance().addToRequestQueue(req);
