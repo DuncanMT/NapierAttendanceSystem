@@ -204,11 +204,6 @@ public class EventActivity extends NfcActivity  {
 
                             if(classesSpinner.getSelectedItem()!= null)
                                 makeAttendsRequest(classesSpinner.getSelectedItem().toString());
-                            else
-                                Toast.makeText(getApplicationContext(),
-                                        "Spinner error",
-                                        Toast.LENGTH_LONG).show();
-
 
                         } catch (JSONException e) {
                             e.printStackTrace();
