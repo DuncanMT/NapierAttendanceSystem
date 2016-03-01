@@ -1,6 +1,5 @@
 package com.duncan.napierattendancesystem;
 
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
@@ -20,8 +19,7 @@ import org.json.JSONObject;
 public class LoginActivity extends NfcActivity {
 
     private static String TAG = LoginActivity.class.getSimpleName();
-    private String Response;
-    private String baseurl = "http://napierattendance-duncanmt.rhcloud.com/CardID.php?login=";
+    private final String baseurl = "http://napierattendance-duncanmt.rhcloud.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

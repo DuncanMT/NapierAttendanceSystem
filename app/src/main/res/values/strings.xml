@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Napier Attendance System</string>
+    <string name="app_name">Napier Attendance</string>
     <string name="loginmsg">Please scan your Edinburgh Napier ID card to sign in</string>
     <string name="nfc_not_enabled">Please enable NFC to continue</string>
     <string name="nfc_not_available">This app requires NFC to work</string>
@@ -7,4 +7,6 @@
     <string name="timetable">Timetable</string>
     <string name="nextweek">Next Week</string>
     <string name="prevweek">Previous Week</string>
+    <string name="present">Present</string>
+    <string name="absent">Absent</string>
 </resources>

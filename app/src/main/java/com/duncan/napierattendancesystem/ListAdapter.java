@@ -1,11 +1,12 @@
 package com.duncan.napierattendancesystem;
 
 import android.content.Context;
-import android.graphics.Color;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -14,7 +15,6 @@ class ListAdapter extends BaseAdapter {
 
     Context context;
     ArrayList<ListItem> data = new ArrayList<>();
-    ArrayList<Integer> colouredItems = new ArrayList<>();
     private static LayoutInflater inflater = null;
 
     public ListAdapter(Context context) {
@@ -44,15 +44,24 @@ class ListAdapter extends BaseAdapter {
         ListItem item = data.get(position);
 
         if(v==null){
-            v = inflater.inflate(R.layout.student_present, null);
+            v = inflater.inflate(R.layout.student, null);
         }
-        TextView text = (TextView) v.findViewById(R.id.text);
-        text.setText(item.getText());
+        TextView idView = (TextView) v.findViewById(R.id.id);
+        idView.setText(item.getId());
+        TextView fnameView = (TextView) v.findViewById(R.id.fname);
+        fnameView.setText(item.getFname());
+        TextView snameView = (TextView) v.findViewById(R.id.sname);
+        snameView.setText(item.getSname());
+        TextView presentView = (TextView) v.findViewById(R.id.present);
+        ImageView status = (ImageView) v.findViewById(R.id.status);
 
-        if (item.getColour().equals("red")){
-            v.setBackgroundColor(Color.RED);
+
+        if (item.getPresent().equals("1")){
+            status.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.blue_circle));
+            presentView.setText(R.string.present);
         }else{
-            v.setBackgroundColor(Color.BLUE);
+            status.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.red_circle));
+            presentView.setText(R.string.absent);
         }
 
         return v;
@@ -62,7 +71,7 @@ class ListAdapter extends BaseAdapter {
         data.clear();
     }
 
-    public void add(ListItem newdata){
-        data.add(newdata);
+    public void add(ListItem newData){
+        data.add(newData);
     }
 }

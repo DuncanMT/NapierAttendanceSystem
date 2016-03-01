@@ -44,7 +44,6 @@ public class NfcActivity extends AppCompatActivity {
         IntentFilter[] filters = new IntentFilter[1];
         String[][] techList = new String[][] { new String[] { NfcA.class.getName() } };
 
-        // Notice that this is the same filter as in our manifest.
         filters[0] = new IntentFilter();
         filters[0].addAction(NfcAdapter.ACTION_TECH_DISCOVERED);
         filters[0].addCategory(Intent.CATEGORY_DEFAULT);

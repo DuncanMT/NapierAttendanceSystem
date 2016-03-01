@@ -1,12 +1,10 @@
 package com.duncan.napierattendancesystem;
 
+import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,6 +17,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
@@ -29,7 +29,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class EventActivity extends NfcActivity  {
 
@@ -50,6 +51,8 @@ public class EventActivity extends NfcActivity  {
     private Button prevButton, nextButton;
 
     private final String baseurl = "http://napierattendance-duncanmt.rhcloud.com";
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,7 +126,6 @@ public class EventActivity extends NfcActivity  {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String cardID = readID(idInBinary);
             makeRegisterRequest(cardID);
-
         }
     }
 
@@ -241,14 +243,12 @@ public class EventActivity extends NfcActivity  {
                                 JSONObject event = (JSONObject) response
                                         .get(i);
 
-                                String name = event.getString("matric_no");
+                                String id = event.getString("matric_no");
+                                String fname = event.getString("fname");
+                                String sname = event.getString("sname");
                                 String present = event.getString("trk_val");
 
-                                if(present.equals("0")) {
-                                    listAdapter.add(new ListItem(name, "red"));
-                                }else{
-                                    listAdapter.add(new ListItem(name, "blue"));
-                                }
+                                listAdapter.add(new ListItem(id, fname, sname, present));
                             }
                             listAdapter.notifyDataSetChanged();
 
