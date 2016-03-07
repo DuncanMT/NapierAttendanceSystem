@@ -71,4 +71,19 @@ public class SpinnerAdapter extends BaseAdapter {
         idView.setText(item.getEvent());
         return v;
     }
+
+    @Override
+    public View getDropDownView(int position, View convertView, ViewGroup parent) {
+        View v = null;
+        EventData event  = data.get(position);
+        if (event.getWeek() != currentWeek) {
+            TextView tv = new TextView(context);
+            tv.setVisibility(View.GONE);
+            tv.setHeight(0);
+            v = tv;
+        } else {
+            v = super.getDropDownView(position, null, parent);
+        }
+        return v;
+    }
 }
