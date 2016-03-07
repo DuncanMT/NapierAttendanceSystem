@@ -11,10 +11,10 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
-class ListAdapter extends BaseAdapter {
+public class ListAdapter extends BaseAdapter {
 
-    Context context;
-    ArrayList<ListItem> data = new ArrayList<>();
+    private Context context;
+    private ArrayList<ListItem> data = new ArrayList<>();
     private static LayoutInflater inflater = null;
 
     public ListAdapter(Context context) {
@@ -29,13 +29,22 @@ class ListAdapter extends BaseAdapter {
     }
 
     @Override
-    public Object getItem(int position) {
+    public ListItem getItem(int position) {
         return data.get(position);
     }
 
     @Override
     public long getItemId(int position) {
         return position;
+    }
+
+
+    public void clear(){
+        data.clear();
+    }
+
+    public void add(ListItem newData){
+        data.add(newData);
     }
 
     @Override
@@ -65,13 +74,5 @@ class ListAdapter extends BaseAdapter {
         }
 
         return v;
-    }
-
-    public void clear(){
-        data.clear();
-    }
-
-    public void add(ListItem newData){
-        data.add(newData);
     }
 }

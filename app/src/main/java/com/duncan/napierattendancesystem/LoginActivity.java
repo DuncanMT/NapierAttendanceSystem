@@ -7,14 +7,19 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.StringRequest;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class LoginActivity extends NfcActivity {
 
@@ -43,41 +48,25 @@ public class LoginActivity extends NfcActivity {
         }
     }
 
-    private String readID(byte [] inarray) {
-        int i, j, in;
-        String[] hex = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
-        String out = "";
-
-        for (j = 0; j < inarray.length; ++j) {
-            in = (int) inarray[j] & 0xff;
-            i = (in >> 4) & 0x0f;
-            out += hex[i];
-            i = in & 0x0f;
-            out += hex[i];
-        }
-        return out;
-    }
-
-    private void makeLoginRequest(String cardID) {
+    private void makeLoginRequest(final String cardID) {
         Uri.Builder url = Uri.parse(baseurl).buildUpon();
-        url.path("CardID.php");
-        url.appendQueryParameter("login", cardID);
+        url.path("/post/login.php");
         String finishedurl = url.toString();
-
-        JsonArrayRequest req = new JsonArrayRequest(finishedurl,
-                new Response.Listener<JSONArray>() {
+        Log.d(TAG, finishedurl);
+        StringRequest req = new StringRequest(Request.Method.POST,finishedurl,
+                new Response.Listener<String>() {
                     @Override
-                    public void onResponse(JSONArray response) {
-                        Log.d(TAG, response.toString());
+                    public void onResponse(String response) {
+                        Log.d(TAG, response);
                         try {
                             if(response.length()==0) {
                                 Toast.makeText(getApplicationContext(),
                                         "Error: User not found",
                                         Toast.LENGTH_LONG).show();
                             }else{
-                                JSONObject event = (JSONObject) response
-                                        .get(0);
-                                String name = event.getString("spname");
+                                JSONArray data = new JSONArray(response);
+                                JSONObject user = data.getJSONObject(0);
+                                String name = user.getString("spname");
                                 Log.d(TAG, "Response username = " + name);
                                 LoginState.setUserName(LoginActivity.this, name);
                                 Intent eventIntent = new Intent(LoginActivity.this, EventActivity.class);
@@ -86,19 +75,28 @@ public class LoginActivity extends NfcActivity {
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            Toast.makeText(getApplicationContext(),
-                                    "Error: " + e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
+                            Log.d(TAG, "VolleyJsonLoginError :"+e.getMessage());
                         }
                     }
-                }, new Response.ErrorListener() {
+                },CreateErrorListener()){
+            @Override
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<>();
+                // the POST parameters:
+                params.put("login", cardID);
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(req);
+    }
+
+    private Response.ErrorListener CreateErrorListener(){
+        return new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 VolleyLog.d(TAG, "Error: " + error.getMessage());
-                Toast.makeText(getApplicationContext(),
-                        "Volley error "+error.getMessage(), Toast.LENGTH_SHORT).show();
             }
-        });
-        AppController.getInstance().addToRequestQueue(req);
+        };
     }
 }

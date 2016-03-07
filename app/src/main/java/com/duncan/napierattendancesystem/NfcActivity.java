@@ -55,12 +55,26 @@ public class NfcActivity extends AppCompatActivity {
         adapter.disableForegroundDispatch(activity);
     }
 
-
     public boolean isNfcState() {
         return NfcState;
     }
 
     public void setNfcState(boolean nfcState) {
         NfcState = nfcState;
+    }
+
+    protected String readID(byte [] inArray) {
+        int i, j, in;
+        String[] hex = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
+        String out = "";
+
+        for (j = 0; j < inArray.length; ++j) {
+            in = (int) inArray[j] & 0xff;
+            i = (in >> 4) & 0x0f;
+            out += hex[i];
+            i = in & 0x0f;
+            out += hex[i];
+        }
+        return out;
     }
 }

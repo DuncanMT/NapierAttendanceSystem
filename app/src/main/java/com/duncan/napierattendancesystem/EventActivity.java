@@ -1,6 +1,5 @@
 package com.duncan.napierattendancesystem;
 
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
@@ -10,19 +9,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.StringRequest;
 
 import org.json.JSONArray;
@@ -37,21 +32,17 @@ public class EventActivity extends NfcActivity  {
     private static String TAG = EventActivity.class.getSimpleName();
 
     private String username;
-
     private int currentWeek = 0;
 
     private TextView weekTextView;
 
     private Spinner classesSpinner;
-    private ArrayAdapter<String> classesAdapter;
+    private SpinnerAdapter classesAdapter;
 
     private ListView studentListView;
     private ListAdapter listAdapter;
 
-    private Button prevButton, nextButton;
-
     private final String baseurl = "http://napierattendance-duncanmt.rhcloud.com";
-
 
 
     @Override
@@ -71,15 +62,15 @@ public class EventActivity extends NfcActivity  {
         weekTextView = (TextView) findViewById(R.id.week);
         classesSpinner = (Spinner) findViewById(R.id.module);
         studentListView = (ListView) findViewById(R.id.listView);
-        prevButton = (Button) findViewById(R.id.prevButton);
-        nextButton = (Button) findViewById(R.id.nextButton);
+        Button prevButton = (Button) findViewById(R.id.prevButton);
+        Button nextButton = (Button) findViewById(R.id.nextButton);
 
         prevButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (currentWeek > 1) {
                     currentWeek--;
-                    weekTextView.setText("Week "+ currentWeek);
-                    makeClassesRequest();
+                    weekTextView.setText("Week " + currentWeek);
+                    classesAdapter.setCurrentWeek(currentWeek);
                 }
             }
         });
@@ -89,7 +80,7 @@ public class EventActivity extends NfcActivity  {
                 if (currentWeek < 18) {
                     currentWeek++;
                     weekTextView.setText("Week " + currentWeek);
-                    makeClassesRequest();
+                    classesAdapter.setCurrentWeek(currentWeek);
                 }
             }
         });
@@ -101,8 +92,9 @@ public class EventActivity extends NfcActivity  {
         classesSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String event = parent.getItemAtPosition(position).toString();
-                makeAttendsRequest(event);
+                EventData event = (EventData) parent.getItemAtPosition(position);
+                Log.d(TAG, event.getEvent()+ currentWeek);
+                makeAttendsRequest(event.getEvent(), Integer.toString(currentWeek));
             }
 
             @Override
@@ -110,8 +102,7 @@ public class EventActivity extends NfcActivity  {
 
             }
         });
-        classesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, android.R.id.text1);
-        classesAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        classesAdapter = new SpinnerAdapter(this, currentWeek);
         classesSpinner.setAdapter(classesAdapter);
     }
 
@@ -125,123 +116,102 @@ public class EventActivity extends NfcActivity  {
         if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String cardID = readID(idInBinary);
-            makeRegisterRequest(cardID);
+            EventData event = (EventData) classesSpinner.getSelectedItem();
+            makeRegisterRequest(cardID, Integer.toString(currentWeek), event.getEvent());
         }
-    }
-
-    private String readID(byte [] inarray) {
-        int i, j, in;
-        String[] hex = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"};
-        String out = "";
-
-        for (j = 0; j < inarray.length; ++j) {
-            in = (int) inarray[j] & 0xff;
-            i = (in >> 4) & 0x0f;
-            out += hex[i];
-            i = in & 0x0f;
-            out += hex[i];
-        }
-        return out;
     }
 
     private void makeWeekNoRequest() {
         Uri.Builder url = Uri.parse(baseurl).buildUpon();
-        url.path("CardID.php");
-        url.appendQueryParameter("weeknum", "");
+        url.path("post/weeknum.php");
         String finishedurl = url.toString();
-        JsonArrayRequest req = new JsonArrayRequest(finishedurl,
-                new Response.Listener<JSONArray>() {
+        StringRequest req = new StringRequest(Request.Method.POST, finishedurl,
+                new Response.Listener<String>() {
                     @Override
-                    public void onResponse(JSONArray response) {
-                        try {
-                            for (int i = 0; i < response.length(); i++) {
-
-                                JSONObject event = (JSONObject) response
-                                        .get(i);
-                                String curweek = event.getString("n");
-                                currentWeek = Integer.parseInt(curweek);
-                                makeClassesRequest();
-                                weekTextView.setText("Week "+ currentWeek);
-
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            Toast.makeText(getApplicationContext(),
-                                    "Error: " + e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
+                    public void onResponse(String response) {
+                        Log.d(TAG, "Volley response: " + response);
+                        if(response.length()>0) {
+                            setCurrentWeek(Integer.parseInt(response));
                         }
-
                     }
-                }, new Response.ErrorListener() {
+                }, CreateErrorListener()){
             @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.d(TAG, "Error: " + error.getMessage());
-                Toast.makeText(getApplicationContext(),
-                        "Volley weeknum Error "+error.getMessage(), Toast.LENGTH_SHORT).show();
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<>();
+                // the POST parameters:
+                params.put("weeknum", "");
+                return params;
             }
-        });
+        };
         AppController.getInstance().addToRequestQueue(req);
     }
 
-    private void makeClassesRequest() {
+    private void makeClassesRequest(final String username) {
         Uri.Builder url = Uri.parse(baseurl).buildUpon();
-        url.path("CardID.php");
-        url.appendQueryParameter("name", username);
-        url.appendQueryParameter("week", Integer.toString(currentWeek));
+        url.path("post/classes.php");
         String finishedurl = url.toString();
-        JsonArrayRequest req = new JsonArrayRequest(finishedurl,
-                new Response.Listener<JSONArray>() {
+        StringRequest req = new StringRequest(Request.Method.POST, finishedurl,
+                new Response.Listener<String>() {
                     @Override
-                    public void onResponse(JSONArray response) {
+                    public void onResponse(String response) {
                         try {
-                            classesAdapter.clear();
-                            for (int i = 0; i < response.length(); i++) {
-                                JSONObject event = (JSONObject) response
-                                        .get(i);
+                            JSONArray data = new JSONArray(response);
+                            for (int i = 0; i < data.length(); i++) {
+                                JSONObject event = data.getJSONObject(i);
 
-                                String name = event.getString("id");
-                                classesAdapter.add(name);
+                                String trimester = "TR1";
+                                String day="0";
+                                switch(event.getString("dy")){
+                                    case "Monday":day ="1"; break;
+                                    case "Tuesday":day ="2"; break;
+                                    case "Wednesday":day ="3"; break;
+                                    case "Thursday":day ="4"; break;
+                                    case "Friday": day ="5";break;
+                                }
+                                String time = event.getString("st");
+                                String module = event.getString("modul");
+                                String eventName = event.getString("id");
+                                int week = event.getInt("week");
+
+                                classesAdapter.add(new EventData(trimester, day, time, module, eventName, week));
                             }
                             classesAdapter.notifyDataSetChanged();
-
-                            if(classesSpinner.getSelectedItem()!= null)
-                                makeAttendsRequest(classesSpinner.getSelectedItem().toString());
-
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            Toast.makeText(getApplicationContext(),
-                                    "Error: " + e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
+                            Log.d(TAG, "VolleyJsonClassesError :" + e.getMessage());
                         }
 
                     }
-                }, new Response.ErrorListener() {
+                },CreateErrorListener()){
             @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.d(TAG, "Error: " + error.getMessage());
-                Toast.makeText(getApplicationContext(),
-                        "Volley classes Error "+error.getMessage(), Toast.LENGTH_SHORT).show();
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<>();
+                // the POST parameters:
+                params.put("name", username);
+                return params;
             }
-        });
+        };
         AppController.getInstance().addToRequestQueue(req);
     }
 
-    private void makeAttendsRequest(String event) {
+    private void makeAttendsRequest(final String event, final String currentWeek) {
         Uri.Builder url = Uri.parse(baseurl).buildUpon();
-        url.path("CardID.php");
-        url.appendQueryParameter("attends", event);
-        url.appendQueryParameter("week", Integer.toString(currentWeek));
+        url.path("post/attends.php");
         String finishedurl = url.toString();
-        JsonArrayRequest req = new JsonArrayRequest(finishedurl,
-                new Response.Listener<JSONArray>() {
+
+        StringRequest req = new StringRequest(Request.Method.POST, finishedurl,
+                new Response.Listener<String>() {
                     @Override
-                    public void onResponse(JSONArray response) {
+                    public void onResponse(String response) {
                         listAdapter.clear();
                         try {
-                            for (int i = 0; i < response.length(); i++) {
+                            JSONArray data = new JSONArray(response);
 
-                                JSONObject event = (JSONObject) response
-                                        .get(i);
+                            for (int i = 0; i < data.length(); i++) {
+
+                                JSONObject event = data.getJSONObject(i);
 
                                 String id = event.getString("matric_no");
                                 String fname = event.getString("fname");
@@ -254,50 +224,63 @@ public class EventActivity extends NfcActivity  {
 
                         } catch (JSONException e) {
                             e.printStackTrace();
-                            Toast.makeText(getApplicationContext(),
-                                    "Error: " + e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
+                            Log.d(TAG, "VolleyJsonAttendsError :" + e.getMessage());
                         }
 
                     }
-                }, new Response.ErrorListener() {
+                }, CreateErrorListener()){
             @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.d(TAG, "Error: " + error.getMessage());
-                Toast.makeText(getApplicationContext(),
-                        "Volley attends Error "+error.getMessage(), Toast.LENGTH_SHORT).show();
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<>();
+                // the POST parameters:
+                params.put("attends", event);
+                params.put("week", currentWeek);
+                return params;
             }
-        });
+        };
         AppController.getInstance().addToRequestQueue(req);
     }
 
-    private void makeRegisterRequest(String cardID) {
+    private void makeRegisterRequest(final String cardID, final String currentWeek, final String event) {
         Uri.Builder url = Uri.parse(baseurl).buildUpon();
-        url.path("CardID.php");
-        url.appendQueryParameter("trimester", "TR1");
-        url.appendQueryParameter("week", Integer.toString(currentWeek));
-        url.appendQueryParameter("day", "4");
-        url.appendQueryParameter("time","15:00" );
-        url.appendQueryParameter("module", "SET10109");
-        url.appendQueryParameter("event", classesSpinner.getSelectedItem().toString() );
-        url.appendQueryParameter("matric", cardID);
+        url.path("/post/register_attendance.php");
+
 
         String finishedurl = url.toString();
 
-        JsonArrayRequest req = new JsonArrayRequest(finishedurl,
-                new Response.Listener<JSONArray>() {
+        StringRequest req = new StringRequest(finishedurl,
+                new Response.Listener<String>() {
                     @Override
-                    public void onResponse(JSONArray response) {
-                        makeAttendsRequest(classesSpinner.getSelectedItem().toString());
+                    public void onResponse(String response) {
 
                     }
-                }, new Response.ErrorListener() {
+                }, CreateErrorListener()){
+            @Override
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<>();
+                // the POST parameters:
+                params.put("trimester", "TR1");
+                params.put("week", currentWeek);
+                params.put("day", "4");
+                params.put("time", "15:00");
+                params.put("module", "SET10109");
+                params.put("event", event);
+                params.put("matric", cardID);
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(req);
+    }
+
+    private Response.ErrorListener CreateErrorListener(){
+        return new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                makeAttendsRequest(classesSpinner.getSelectedItem().toString());
+                VolleyLog.d(TAG, "Volley Error: " + error.getMessage());
             }
-        });
-        AppController.getInstance().addToRequestQueue(req);
+        };
     }
 
     @Override
@@ -320,5 +303,11 @@ public class EventActivity extends NfcActivity  {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void setCurrentWeek(int currentWeek) {
+        this.currentWeek = currentWeek;
+        weekTextView.setText("Week "+ currentWeek);
+        makeClassesRequest(username);
     }
 }
