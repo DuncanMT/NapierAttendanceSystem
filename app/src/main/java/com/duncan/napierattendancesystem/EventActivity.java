@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -65,26 +66,6 @@ public class EventActivity extends NfcActivity  {
         Button prevButton = (Button) findViewById(R.id.prevButton);
         Button nextButton = (Button) findViewById(R.id.nextButton);
 
-        prevButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (currentWeek > 1) {
-                    currentWeek--;
-                    weekTextView.setText("Week " + currentWeek);
-                    classesAdapter.setCurrentWeek(currentWeek);
-                }
-            }
-        });
-
-        nextButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (currentWeek < 18) {
-                    currentWeek++;
-                    weekTextView.setText("Week " + currentWeek);
-                    classesAdapter.setCurrentWeek(currentWeek);
-                }
-            }
-        });
-
         makeWeekNoRequest();
         listAdapter = new ListAdapter(this);
         studentListView.setAdapter(listAdapter);
@@ -93,7 +74,7 @@ public class EventActivity extends NfcActivity  {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 EventData event = (EventData) parent.getItemAtPosition(position);
-                Log.d(TAG, event.getEvent()+ currentWeek);
+                Log.d(TAG, "event and current week" + event.getEvent()+ currentWeek);
                 makeAttendsRequest(event.getEvent(), Integer.toString(currentWeek));
             }
 
@@ -104,6 +85,28 @@ public class EventActivity extends NfcActivity  {
         });
         classesAdapter = new SpinnerAdapter(this, currentWeek);
         classesSpinner.setAdapter(classesAdapter);
+
+        prevButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (currentWeek > 1) {
+                    currentWeek--;
+                    weekTextView.setText("Week " + currentWeek);
+                    classesAdapter.setCurrentWeek(currentWeek);
+                    classesSpinner.setSelection(0);
+                }
+            }
+        });
+
+        nextButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (currentWeek < 18) {
+                    currentWeek++;
+                    weekTextView.setText("Week " + currentWeek);
+                    classesAdapter.setCurrentWeek(currentWeek);
+                    classesSpinner.setSelection(0);
+                }
+            }
+        });
     }
 
     @Override
@@ -117,7 +120,12 @@ public class EventActivity extends NfcActivity  {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String cardID = readID(idInBinary);
             EventData event = (EventData) classesSpinner.getSelectedItem();
-            makeRegisterRequest(cardID, Integer.toString(currentWeek), event.getEvent());
+            if(!event.getEvent().equals("Select an Event")) {
+                makeRegisterRequest(cardID, event, Integer.toString(currentWeek));
+            }else{
+                Toast.makeText(EventActivity.this, "Error: no event selected",
+                        Toast.LENGTH_LONG).show();
+            }
         }
     }
 
@@ -156,6 +164,7 @@ public class EventActivity extends NfcActivity  {
                     @Override
                     public void onResponse(String response) {
                         try {
+
                             JSONArray data = new JSONArray(response);
                             for (int i = 0; i < data.length(); i++) {
                                 JSONObject event = data.getJSONObject(i);
@@ -173,8 +182,11 @@ public class EventActivity extends NfcActivity  {
                                 String module = event.getString("modul");
                                 String eventName = event.getString("id");
                                 int week = event.getInt("week");
-
-                                classesAdapter.add(new EventData(trimester, day, time, module, eventName, week));
+                                if(classesAdapter.contains(eventName)){
+                                    classesAdapter.addWeek(week, eventName);
+                                }else{
+                                    classesAdapter.add(new EventData(trimester, day, time,module,eventName,week));
+                                }
                             }
                             classesAdapter.notifyDataSetChanged();
                         } catch (JSONException e) {
@@ -242,18 +254,24 @@ public class EventActivity extends NfcActivity  {
         AppController.getInstance().addToRequestQueue(req);
     }
 
-    private void makeRegisterRequest(final String cardID, final String currentWeek, final String event) {
+    private void makeRegisterRequest(final String cardID, final EventData event, final String currentWeek ) {
         Uri.Builder url = Uri.parse(baseurl).buildUpon();
-        url.path("/post/register_attendance.php");
-
+        url.path("post/register_attendance.php");
 
         String finishedurl = url.toString();
-
-        StringRequest req = new StringRequest(finishedurl,
+        StringRequest req = new StringRequest(Request.Method.POST, finishedurl,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-
+                        Log.d(TAG,"Register Response :"+ response);
+                        if(response.equals("exists")) {
+                            Toast.makeText(EventActivity.this, "Student already registered",
+                                    Toast.LENGTH_LONG).show();
+                        }else {
+                            Toast.makeText(EventActivity.this, "Student registered",
+                                    Toast.LENGTH_LONG).show();
+                            makeAttendsRequest(event.getEvent(), currentWeek);
+                        }
                     }
                 }, CreateErrorListener()){
             @Override
@@ -261,13 +279,14 @@ public class EventActivity extends NfcActivity  {
             {
                 Map<String, String>  params = new HashMap<>();
                 // the POST parameters:
-                params.put("trimester", "TR1");
+                params.put("trimester", event.getTrimester());
                 params.put("week", currentWeek);
-                params.put("day", "4");
-                params.put("time", "15:00");
-                params.put("module", "SET10109");
-                params.put("event", event);
-                params.put("matric", cardID);
+                params.put("day",event.getDay());
+                params.put("module", event.getModule());
+                params.put("time", event.getTime());
+                params.put("event", event.getEvent());
+                params.put("cardID", cardID);
+
                 return params;
             }
         };
@@ -296,10 +315,17 @@ public class EventActivity extends NfcActivity  {
 
         if (id == R.id.action_logout) {
             LoginState.clearUserName(this);
-            Intent mainIntent = new Intent(EventActivity.this, LoginActivity.class);
-            EventActivity.this.startActivity(mainIntent);
+            Intent intent = new Intent(EventActivity.this, LoginActivity.class);
+            EventActivity.this.startActivity(intent);
             EventActivity.this.finish();
             return true;
+        }
+
+        if (id == R.id.action_add_student) {
+            Intent intent = new Intent(EventActivity.this, AddStudentActivity.class);
+            EventData event = (EventData) classesSpinner.getSelectedItem();
+            intent.putExtra("event",event);
+            EventActivity.this.startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);

@@ -1,16 +1,19 @@
 package com.duncan.napierattendancesystem;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+
 /**
  * Created by Duncan on 01/03/2016.
  */
-public class EventData {
+public class EventData implements Serializable {
 
     private String trimester;
     private String day;
     private String time;
     private String module;
     private String event;
-    private int week;
+    private ArrayList<Integer> weeks = new ArrayList<>();
 
     public EventData(String trimester, String day, String time, String module, String event, int week){
         this.trimester=trimester;
@@ -18,7 +21,11 @@ public class EventData {
         this.time = time;
         this.module =module;
         this.event = event;
-        this.week = week;
+        weeks.add(week);
+    }
+
+    public EventData(String message){
+        event = message;
     }
     public String getTrimester() {
         return trimester;
@@ -61,11 +68,11 @@ public class EventData {
     }
 
 
-    public int getWeek() {
-        return week;
+    public ArrayList<Integer> getWeeks() {
+        return weeks;
     }
 
-    public void setWeek(int week) {
-        this.week = week;
+    public void addWeek(int week) {
+        this.weeks.add(week);
     }
 }

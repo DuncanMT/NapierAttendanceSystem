@@ -10,4 +10,5 @@
     <string name="present">Present</string>
     <string name="absent">Absent</string>
     <string name="week">Week</string>
+    <string name="add_student">Add Student</string>
 </resources>

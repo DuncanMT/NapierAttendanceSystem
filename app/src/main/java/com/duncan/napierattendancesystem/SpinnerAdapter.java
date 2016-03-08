@@ -23,6 +23,7 @@ public class SpinnerAdapter extends BaseAdapter {
     public SpinnerAdapter(Context context, int currentWeek){
         this.context = context;
         this.currentWeek = currentWeek;
+        data.add(new EventData("Select an Event"));
         inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
@@ -41,10 +42,6 @@ public class SpinnerAdapter extends BaseAdapter {
         return position;
     }
 
-    public int getCurrentWeek() {
-        return currentWeek;
-    }
-
     public void setCurrentWeek(int currentWeek) {
         this.currentWeek = currentWeek;
     }
@@ -52,6 +49,23 @@ public class SpinnerAdapter extends BaseAdapter {
 
     public void clear(){
         data.clear();
+    }
+
+    public boolean contains(String event){
+        for(EventData e : data){
+            if(event.equals(e.getEvent())){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void addWeek(int week, String event){
+        for(EventData e : data){
+            if(event.equals(e.getEvent()) && !e.getWeeks().contains(week)){
+                e.addWeek(week);
+            }
+        }
     }
 
     public void add(EventData newData){
@@ -76,7 +90,7 @@ public class SpinnerAdapter extends BaseAdapter {
     public View getDropDownView(int position, View convertView, ViewGroup parent) {
         View v = null;
         EventData event  = data.get(position);
-        if (event.getWeek() != currentWeek) {
+        if (!event.getWeeks().contains(currentWeek) || position == 0) {
             TextView tv = new TextView(context);
             tv.setVisibility(View.GONE);
             tv.setHeight(0);
