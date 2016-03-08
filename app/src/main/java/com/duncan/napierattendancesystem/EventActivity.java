@@ -1,5 +1,9 @@
 package com.duncan.napierattendancesystem;
 
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.app.usage.UsageEvents;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
@@ -69,30 +73,31 @@ public class EventActivity extends NfcActivity  {
         makeWeekNoRequest();
         listAdapter = new ListAdapter(this);
         studentListView.setAdapter(listAdapter);
+        studentListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ListItem student = (ListItem) studentListView.getItemAtPosition(position);
+                confirmationMessage(student);
+            }
+        });
 
+        classesAdapter = new SpinnerAdapter(this, currentWeek);
+        classesSpinner.setAdapter(classesAdapter);
         classesSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 EventData event = (EventData) parent.getItemAtPosition(position);
-                Log.d(TAG, "event and current week" + event.getEvent()+ currentWeek);
+                Log.d(TAG, "event and current week" + event.getEvent() + currentWeek);
                 makeAttendsRequest(event.getEvent(), Integer.toString(currentWeek));
             }
-
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
-        classesAdapter = new SpinnerAdapter(this, currentWeek);
-        classesSpinner.setAdapter(classesAdapter);
 
         prevButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (currentWeek > 1) {
                     currentWeek--;
-                    weekTextView.setText("Week " + currentWeek);
-                    classesAdapter.setCurrentWeek(currentWeek);
-                    classesSpinner.setSelection(0);
+                    setCurrentWeek(currentWeek);
                 }
             }
         });
@@ -101,9 +106,7 @@ public class EventActivity extends NfcActivity  {
             public void onClick(View v) {
                 if (currentWeek < 18) {
                     currentWeek++;
-                    weekTextView.setText("Week " + currentWeek);
-                    classesAdapter.setCurrentWeek(currentWeek);
-                    classesSpinner.setSelection(0);
+                    setCurrentWeek(currentWeek);
                 }
             }
         });
@@ -226,11 +229,12 @@ public class EventActivity extends NfcActivity  {
                                 JSONObject event = data.getJSONObject(i);
 
                                 String id = event.getString("matric_no");
+                                String cardID = event.getString("SPR_CODE");
                                 String fname = event.getString("fname");
                                 String sname = event.getString("sname");
                                 String present = event.getString("trk_val");
 
-                                listAdapter.add(new ListItem(id, fname, sname, present));
+                                listAdapter.add(new ListItem(id, cardID, fname, sname, present));
                             }
                             listAdapter.notifyDataSetChanged();
 
@@ -263,7 +267,7 @@ public class EventActivity extends NfcActivity  {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        Log.d(TAG,"Register Response :"+ response);
+                        Log.d(TAG, "Register Response :" + response);
                         if(response.equals("exists")) {
                             Toast.makeText(EventActivity.this, "Student already registered",
                                     Toast.LENGTH_LONG).show();
@@ -279,13 +283,44 @@ public class EventActivity extends NfcActivity  {
             {
                 Map<String, String>  params = new HashMap<>();
                 // the POST parameters:
-                params.put("trimester", event.getTrimester());
                 params.put("week", currentWeek);
-                params.put("day",event.getDay());
-                params.put("module", event.getModule());
-                params.put("time", event.getTime());
                 params.put("event", event.getEvent());
                 params.put("cardID", cardID);
+
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(req);
+    }
+
+    private void makeSetAbsentRequest(final ListItem student, final EventData event, final String currentWeek ) {
+        Uri.Builder url = Uri.parse(baseurl).buildUpon();
+        url.path("post/mark_absent.php");
+
+        String finishedurl = url.toString();
+        StringRequest req = new StringRequest(Request.Method.POST, finishedurl,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.d(TAG, "Register Response :" + response);
+                        if(response.equals("exists")) {
+                            Toast.makeText(EventActivity.this, "Student already absent",
+                                    Toast.LENGTH_LONG).show();
+                        }else {
+                            Toast.makeText(EventActivity.this, "Student marked absent",
+                                    Toast.LENGTH_LONG).show();
+                            makeAttendsRequest(event.getEvent(), currentWeek);
+                        }
+                    }
+                }, CreateErrorListener()){
+            @Override
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<>();
+                // the POST parameters:
+                params.put("week", currentWeek);
+                params.put("event", event.getEvent());
+                params.put("cardID", student.getCardID());
 
                 return params;
             }
@@ -333,7 +368,31 @@ public class EventActivity extends NfcActivity  {
 
     public void setCurrentWeek(int currentWeek) {
         this.currentWeek = currentWeek;
-        weekTextView.setText("Week "+ currentWeek);
+        weekTextView.setText("Week " + currentWeek);
+        classesAdapter.setCurrentWeek(currentWeek);
+        classesSpinner.setSelection(0);
         makeClassesRequest(username);
+    }
+
+    public void confirmationMessage(final ListItem student) {
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case DialogInterface.BUTTON_POSITIVE: // Yes button clicked
+                        EventData event = (EventData) classesSpinner.getSelectedItem();
+                        if(!event.getEvent().equals("Select an Event")) {
+                            makeSetAbsentRequest(student, event, Integer.toString(currentWeek));
+                        }
+                        break;
+                    case DialogInterface.BUTTON_NEGATIVE: // No button clicked // do nothing
+                        Toast.makeText(EventActivity.this, "Canceled", Toast.LENGTH_LONG).show();
+                        break;
+                }
+            }
+        };
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Are you sure you want to mark " + student.getFname()+" absent?")
+                .setPositiveButton("Yes", dialogClickListener)
+                .setNegativeButton("No", dialogClickListener).show();
     }
 }

@@ -166,7 +166,7 @@ public class AddStudentActivity extends NfcActivity {
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case DialogInterface.BUTTON_POSITIVE: // Yes button clicked
-                            makeAddStudentRequest( event,matricNotxt.getText().toString(),firstNametxt.getText().toString(),lastNametxt.getText().toString(), cardIDtxt.getText().toString());
+                        makeAddStudentRequest(event, matricNotxt.getText().toString(), firstNametxt.getText().toString(), lastNametxt.getText().toString(), cardIDtxt.getText().toString());
                         break;
                     case DialogInterface.BUTTON_NEGATIVE: // No button clicked // do nothing
                         Toast.makeText(AddStudentActivity.this, "Add canceled", Toast.LENGTH_LONG).show();
@@ -177,6 +177,6 @@ public class AddStudentActivity extends NfcActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Are you sure?")
                 .setPositiveButton("Yes", dialogClickListener)
-                .setNegativeButton("No", dialogClickListener).show(); }
-
+                .setNegativeButton("No", dialogClickListener).show();
+    }
 }
