@@ -29,81 +29,87 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="21dp" />
 
-    <GridLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:numColumns="2"
-        android:rowCount="5"
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/container_scroll_view"
         android:layout_below="@+id/event_name"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="29dp"
-        android:columnCount="2"
-        android:orientation="vertical">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Matriculation No."
-            android:layout_row="0"
-            android:layout_column="0" />
+        <GridLayout
+            android:layout_width="match_parent"
+            android:numColumns="2"
+            android:rowCount="5"
+            android:columnCount="2"
+            android:orientation="vertical"
+            android:layout_height="wrap_content">
 
-        <EditText
-            android:layout_width="182dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/matric_num"
-            android:layout_row="0"
-            android:layout_column="1" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Matriculation No."
+                android:layout_row="0"
+                android:layout_column="0" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="First Name"
-            android:layout_row="1"
-            android:layout_column="0" />
+            <EditText
+                android:layout_width="182dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/matric_num"
+                android:layout_row="0"
+                android:layout_column="1" />
 
-        <EditText
-            android:layout_width="182dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/first_name"
-            android:layout_row="1"
-            android:layout_column="1" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="First Name"
+                android:layout_row="1"
+                android:layout_column="0" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Last Name"
-            android:layout_row="2"
-            android:layout_column="0" />
+            <EditText
+                android:layout_width="182dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/first_name"
+                android:layout_row="1"
+                android:layout_column="1" />
 
-        <EditText
-            android:layout_width="182dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/last_name"
-            android:layout_row="2"
-            android:layout_column="1" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Last Name"
+                android:layout_row="2"
+                android:layout_column="0" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Card ID"
-            android:layout_row="3"
-            android:layout_column="0" />
+            <EditText
+                android:layout_width="182dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/last_name"
+                android:layout_row="2"
+                android:layout_column="1" />
 
-        <EditText
-            android:layout_width="182dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/card_id"
-            android:hint="Scan card for ID"
-            android:layout_row="3"
-            android:layout_column="1"
-            android:editable="false" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Card ID"
+                android:layout_row="3"
+                android:layout_column="0" />
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Add Student"
-            android:id="@+id/add_student_button"
-            android:layout_row="4"
-            android:layout_column="1" />
-    </GridLayout>
+            <EditText
+                android:layout_width="182dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/card_id"
+                android:hint="Scan card for ID"
+                android:layout_row="3"
+                android:layout_column="1"
+                android:inputType="none" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Student"
+                android:id="@+id/add_student_button"
+                android:layout_row="4"
+                android:layout_column="1" />
+        </GridLayout>
+    </ScrollView>
 </RelativeLayout>
