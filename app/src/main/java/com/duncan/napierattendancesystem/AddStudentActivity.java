@@ -1,5 +1,6 @@
 package com.duncan.napierattendancesystem;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -19,7 +20,6 @@ import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.StringRequest;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -42,10 +42,10 @@ public class AddStudentActivity extends NfcActivity {
         setContentView(R.layout.activity_add_student);
 
         eventNametxt = (TextView) findViewById(R.id.event_name);
+        cardIDtxt = (EditText) findViewById(R.id.card_id);
         matricNotxt = (EditText) findViewById(R.id.matric_num);
         firstNametxt = (EditText) findViewById(R.id.first_name);
         lastNametxt = (EditText) findViewById(R.id.last_name);
-        cardIDtxt = (EditText) findViewById(R.id.card_id);
 
         event = (EventData) getIntent().getSerializableExtra("event");
         eventNametxt.setText(event.getEvent());
@@ -57,7 +57,7 @@ public class AddStudentActivity extends NfcActivity {
                     confirmationMessage();
                 } else {
                     Toast.makeText(AddStudentActivity.this,
-                            "Please enter a value for all of the input fields",
+                            "Please enter a valid value for all of the input fields",
                             Toast.LENGTH_LONG).show();
                 }
             }
@@ -70,11 +70,11 @@ public class AddStudentActivity extends NfcActivity {
     }
 
     private void handleIntent(Intent intent) {
-        String action = intent.getAction();
-        if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
+        if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())) {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String cardID = readID(idInBinary);
             cardIDtxt.setText(cardID);
+            makeCheckForDetailsRequest(cardID);
         }
     }
 
@@ -88,6 +88,41 @@ public class AddStudentActivity extends NfcActivity {
         }else{
             return false;
         }
+    }
+
+    private void makeCheckForDetailsRequest(final String cardID) {
+        Uri.Builder url = Uri.parse(baseurl).buildUpon();
+        url.path("post/check_student.php");
+        String finishedurl = url.toString();
+        StringRequest req = new StringRequest(Request.Method.POST, finishedurl,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        if(!(response.length()==0)) {
+                            Log.d(TAG, "Volley response: " + response);
+                            try {
+                                JSONObject result = new JSONObject(response);
+                                matricNotxt.setText(result.getString("matric_no"));
+                                firstNametxt.setText(result.getString("fname"));
+                                lastNametxt.setText(result.getString("sname"));
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                                Log.d(TAG, "VolleyJsonAttendsError :" + e.getMessage());
+                            }
+                        }
+                    }
+                }, CreateErrorListener()){
+            @Override
+            protected Map<String, String> getParams()
+            {
+                Map<String, String>  params = new HashMap<>();
+                // the POST parameters:
+                params.put("cardID", cardID);
+                Log.d(TAG, params.toString());
+                return params;
+            }
+        };
+        AppController.getInstance().addToRequestQueue(req);
     }
 
     private void makeAddStudentRequest(final EventData event, final String matric, final String fname, final String sname, final String cardID) {
@@ -120,13 +155,6 @@ public class AddStudentActivity extends NfcActivity {
                             e.printStackTrace();
                             Log.d(TAG, "VolleyJsonAttendsError :" + e.getMessage());
                         }
-                        /*if(response.equals("fail")){
-                            Toast.makeText(AddStudentActivity.this, "Error, ",
-                                    Toast.LENGTH_LONG).show();
-                        }else{
-                            Toast.makeText(AddStudentActivity.this, "Student already registered",
-                                    Toast.LENGTH_LONG).show();
-                        }*/
                     }
                 }, CreateErrorListener()){
             @Override
@@ -134,8 +162,8 @@ public class AddStudentActivity extends NfcActivity {
             {
                 Map<String, String>  params = new HashMap<>();
                 // the POST parameters:
-                params.put("weekStart", "2");
-                params.put("weekEnd", "13");
+                params.put("weekStart", event.getFirstWeek());
+                params.put("weekEnd", event.getLastWeek());
                 params.put("trimester", event.getTrimester());
                 params.put("day", event.getDay());
                 params.put("time", event.getTime());
@@ -161,12 +189,23 @@ public class AddStudentActivity extends NfcActivity {
         };
     }
 
+    @Override
+    public void onBackPressed()
+    {
+        Intent returnIntent = new Intent();
+        setResult(Activity.RESULT_CANCELED, returnIntent);
+        finish();
+    }
+
     public void confirmationMessage() {
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
                     case DialogInterface.BUTTON_POSITIVE: // Yes button clicked
                         makeAddStudentRequest(event, matricNotxt.getText().toString(), firstNametxt.getText().toString(), lastNametxt.getText().toString(), cardIDtxt.getText().toString());
+                        Intent returnIntent = new Intent();;
+                        setResult(Activity.RESULT_OK, returnIntent);
+                        finish();
                         break;
                     case DialogInterface.BUTTON_NEGATIVE: // No button clicked // do nothing
                         Toast.makeText(AddStudentActivity.this, "Add canceled", Toast.LENGTH_LONG).show();

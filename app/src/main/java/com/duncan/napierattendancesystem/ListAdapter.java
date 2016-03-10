@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class ListAdapter extends BaseAdapter {
 
@@ -21,6 +22,13 @@ public class ListAdapter extends BaseAdapter {
         this.context = context;
         inflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    }
+
+    @Override
+    public void notifyDataSetChanged() {
+        Collections.sort(data);
+
+        super.notifyDataSetChanged();
     }
 
     @Override

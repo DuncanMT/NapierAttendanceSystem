@@ -2,6 +2,7 @@ package com.duncan.napierattendancesystem;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Created by Duncan on 01/03/2016.
@@ -74,5 +75,13 @@ public class EventData implements Serializable {
 
     public void addWeek(int week) {
         this.weeks.add(week);
+    }
+
+    public String getLastWeek(){
+        return Integer.toString(Collections.max(weeks));
+    }
+
+    public String getFirstWeek(){
+        return Integer.toString(Collections.min(weeks));
     }
 }

@@ -39,8 +39,7 @@ public class LoginActivity extends NfcActivity {
     }
 
     private void handleIntent(Intent intent) {
-        String action = intent.getAction();
-        if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
+        if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())) {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String cardID = readID(idInBinary);
             Log.v("login", cardID);
@@ -69,6 +68,7 @@ public class LoginActivity extends NfcActivity {
                                 String name = user.getString("spname");
                                 Log.d(TAG, "Response username = " + name);
                                 LoginState.setUserName(LoginActivity.this, name);
+                                LoginState.setCardID(LoginActivity.this, cardID);
                                 Intent eventIntent = new Intent(LoginActivity.this, EventActivity.class);
                                 LoginActivity.this.startActivity(eventIntent);
                                 LoginActivity.this.finish();

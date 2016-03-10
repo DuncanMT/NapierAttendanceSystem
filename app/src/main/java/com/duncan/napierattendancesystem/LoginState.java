@@ -9,6 +9,7 @@ import android.preference.PreferenceManager;
  */
 public class LoginState {
     static final String PREF_USER_NAME= "username";
+    static final String PREF_CARDID="cardid";
 
     static SharedPreferences getSharedPreferences(Context ctx) {
         return PreferenceManager.getDefaultSharedPreferences(ctx);
@@ -26,7 +27,19 @@ public class LoginState {
         return getSharedPreferences(ctx).getString(PREF_USER_NAME, "");
     }
 
-    public static void clearUserName(Context ctx)
+    public static void setCardID(Context ctx, String cardid)
+    {
+        SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
+        editor.putString(PREF_CARDID, cardid);
+        editor.apply();
+    }
+
+    public static String getCardID(Context ctx)
+    {
+        return getSharedPreferences(ctx).getString(PREF_CARDID, "");
+    }
+
+    public static void clearUserInfo(Context ctx)
     {
         SharedPreferences.Editor editor = getSharedPreferences(ctx).edit();
         editor.clear(); //clear all stored data

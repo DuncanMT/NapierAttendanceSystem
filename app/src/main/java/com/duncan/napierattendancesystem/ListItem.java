@@ -1,6 +1,6 @@
 package com.duncan.napierattendancesystem;
 
-public class ListItem {
+public class ListItem implements Comparable<ListItem>{
 
     private String id;
     private String cardID;
@@ -14,6 +14,10 @@ public class ListItem {
         this.fname = fname;
         this.sname = sname;
         this.present = present;
+    }
+
+    public int compareTo(ListItem other) {
+        return this.getFname().compareTo(other.getFname());
     }
 
     public String getId() {return id;}

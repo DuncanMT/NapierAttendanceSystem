@@ -1,13 +1,13 @@
 package com.duncan.napierattendancesystem;
 
+import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
-import android.app.usage.UsageEvents;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,6 +37,8 @@ public class EventActivity extends NfcActivity  {
     private static String TAG = EventActivity.class.getSimpleName();
 
     private String username;
+    private String cardID;
+    private boolean verified= false;
     private int currentWeek = 0;
 
     private TextView weekTextView;
@@ -47,6 +49,14 @@ public class EventActivity extends NfcActivity  {
     private ListView studentListView;
     private ListAdapter listAdapter;
 
+    private Handler timerHandler = new Handler();
+    private Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            verified = false;
+        }
+    };
+
     private final String baseurl = "http://napierattendance-duncanmt.rhcloud.com";
 
 
@@ -56,6 +66,7 @@ public class EventActivity extends NfcActivity  {
         setContentView(R.layout.activity_event);
 
         username = LoginState.getUserName(EventActivity.this);
+        cardID = LoginState.getCardID(EventActivity.this);
         Log.d(TAG, "Login State username: " + username);
         if(username.length() == 0)
         {
@@ -76,7 +87,15 @@ public class EventActivity extends NfcActivity  {
         studentListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ListItem student = (ListItem) studentListView.getItemAtPosition(position);
-                confirmationMessage(student);
+                if(student.getPresent().equals("1")) {
+                    if (verified) {
+                        confirmationMessage(student);
+                    } else {
+                        Toast.makeText(EventActivity.this, "You are not verified, scan your ID card", Toast.LENGTH_LONG).show();
+                    }
+                }else{
+                    Toast.makeText(EventActivity.this, student.getFname()+" is already not present", Toast.LENGTH_LONG).show();
+                }
             }
         });
 
@@ -98,6 +117,12 @@ public class EventActivity extends NfcActivity  {
                 if (currentWeek > 1) {
                     currentWeek--;
                     setCurrentWeek(currentWeek);
+                    EventData event = (EventData) classesSpinner.getSelectedItem();
+                    if(event.getWeeks().contains(currentWeek)) {
+                        makeAttendsRequest(event.getEvent(), Integer.toString(currentWeek));
+                    }else{
+                        classesSpinner.setSelection(0);
+                    }
                 }
             }
         });
@@ -107,9 +132,26 @@ public class EventActivity extends NfcActivity  {
                 if (currentWeek < 18) {
                     currentWeek++;
                     setCurrentWeek(currentWeek);
+                    EventData event = (EventData) classesSpinner.getSelectedItem();
+                    if(event.getWeeks().contains(currentWeek)) {
+                        makeAttendsRequest(event.getEvent(), Integer.toString(currentWeek));
+                    }else{
+                        classesSpinner.setSelection(0);
+                    }
                 }
             }
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 1) {
+            if(resultCode == Activity.RESULT_OK){
+                EventData event = (EventData) classesSpinner.getSelectedItem();
+                makeAttendsRequest(event.getEvent(), Integer.toString(currentWeek));
+            }
+        }
     }
 
     @Override
@@ -118,16 +160,21 @@ public class EventActivity extends NfcActivity  {
     }
 
     private void handleIntent(Intent intent) {
-        String action = intent.getAction();
-        if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)) {
-            byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
+        if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())) {
+            byte[] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String cardID = readID(idInBinary);
-            EventData event = (EventData) classesSpinner.getSelectedItem();
-            if(!event.getEvent().equals("Select an Event")) {
-                makeRegisterRequest(cardID, event, Integer.toString(currentWeek));
-            }else{
-                Toast.makeText(EventActivity.this, "Error: no event selected",
-                        Toast.LENGTH_LONG).show();
+            Log.d(TAG, "Scanned Card ID :"+ cardID+" Saved card ID : "+this.cardID);
+            if(cardID.equals(this.cardID)){
+                verfiy();
+                Toast.makeText(EventActivity.this, "User verified for 2 minutes", Toast.LENGTH_LONG).show();
+            }else {
+                EventData event = (EventData) classesSpinner.getSelectedItem();
+                if (!event.getEvent().equals("Select an Event")) {
+                    makeRegisterRequest(cardID, event, Integer.toString(currentWeek));
+                } else {
+                    Toast.makeText(EventActivity.this, "Error: no event selected",
+                            Toast.LENGTH_LONG).show();
+                }
             }
         }
     }
@@ -269,7 +316,7 @@ public class EventActivity extends NfcActivity  {
                     public void onResponse(String response) {
                         Log.d(TAG, "Register Response :" + response);
                         if(response.equals("exists")) {
-                            Toast.makeText(EventActivity.this, "Student already registered",
+                            Toast.makeText(EventActivity.this, "Student card not recognised",
                                     Toast.LENGTH_LONG).show();
                         }else {
                             Toast.makeText(EventActivity.this, "Student registered",
@@ -349,7 +396,7 @@ public class EventActivity extends NfcActivity  {
         int id = item.getItemId();
 
         if (id == R.id.action_logout) {
-            LoginState.clearUserName(this);
+            LoginState.clearUserInfo(this);
             Intent intent = new Intent(EventActivity.this, LoginActivity.class);
             EventActivity.this.startActivity(intent);
             EventActivity.this.finish();
@@ -357,10 +404,14 @@ public class EventActivity extends NfcActivity  {
         }
 
         if (id == R.id.action_add_student) {
-            Intent intent = new Intent(EventActivity.this, AddStudentActivity.class);
-            EventData event = (EventData) classesSpinner.getSelectedItem();
-            intent.putExtra("event",event);
-            EventActivity.this.startActivity(intent);
+            if(verified) {
+                Intent intent = new Intent(EventActivity.this, AddStudentActivity.class);
+                EventData event = (EventData) classesSpinner.getSelectedItem();
+                intent.putExtra("event", event);
+                EventActivity.this.startActivityForResult(intent, 1);
+            }else{
+                Toast.makeText(EventActivity.this, "You are not verified, scan your ID card", Toast.LENGTH_LONG).show();
+            }
         }
 
         return super.onOptionsItemSelected(item);
@@ -370,8 +421,13 @@ public class EventActivity extends NfcActivity  {
         this.currentWeek = currentWeek;
         weekTextView.setText("Week " + currentWeek);
         classesAdapter.setCurrentWeek(currentWeek);
-        classesSpinner.setSelection(0);
         makeClassesRequest(username);
+    }
+
+    private void verfiy(){
+        verified = true;
+        timerHandler.removeCallbacks(timerRunnable);
+        timerHandler.postDelayed(timerRunnable, 120000);
     }
 
     public void confirmationMessage(final ListItem student) {
@@ -385,7 +441,6 @@ public class EventActivity extends NfcActivity  {
                         }
                         break;
                     case DialogInterface.BUTTON_NEGATIVE: // No button clicked // do nothing
-                        Toast.makeText(EventActivity.this, "Canceled", Toast.LENGTH_LONG).show();
                         break;
                 }
             }
