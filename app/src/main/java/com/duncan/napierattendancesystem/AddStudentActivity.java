@@ -66,10 +66,6 @@ public class AddStudentActivity extends NfcActivity {
 
     @Override
     protected void onNewIntent(Intent intent) {
-        handleIntent(intent);
-    }
-
-    private void handleIntent(Intent intent) {
         if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())) {
             byte [] idInBinary = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
             String cardID = readID(idInBinary);
